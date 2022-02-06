@@ -269,6 +269,8 @@ namespace Component
 
         private void OnBoxPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            //if (Device.RuntimePlatform == Device.Android) return;
+
             BoxView box = sender as BoxView;
 
             if (e.PropertyName == nameof(Height))
@@ -280,6 +282,8 @@ namespace Component
 
         private void OnFramePropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            //if (Device.RuntimePlatform == Device.Android) return;
+
             Frame frame = sender as Frame;
 
             if (e.PropertyName == nameof(Height))
@@ -289,19 +293,6 @@ namespace Component
             }
         }
 
-    }
-
-    public class HalvedConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return (double)value / 2.0F;
-        }
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            Trace.WriteLine("HalvedConverter - Only one way bindings are supported with this converter");
-            throw new NotSupportedException("HalvedConverter - Only one way bindings are supported with this converter");
-        }
     }
 
 }
