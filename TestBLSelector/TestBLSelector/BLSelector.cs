@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -13,6 +14,24 @@ namespace Component
 
     public partial class BLSelector : StackLayout
     {
+        #region CornerRadius Property
+        public int CornerRadius
+        {
+            get => (int)GetValue(CornerRadiusProperty);
+            set => SetValue(CornerRadiusProperty, value);
+        }
+        public static BindableProperty CornerRadiusProperty = BindableProperty.Create(nameof(CornerRadius), typeof(int), typeof(BLSelector), -1, BindingMode.Default);
+        #endregion
+
+        #region Border Size Property
+        public int Border
+        {
+            get => (int)GetValue(BorderProperty);
+            set => SetValue(BorderProperty, value);
+        }
+        public static BindableProperty BorderProperty = BindableProperty.Create(nameof(Border), typeof(int), typeof(BLSelector), 2, BindingMode.Default);
+        #endregion
+
         #region FontSize Property
         public double FontSize
         {
@@ -35,18 +54,14 @@ namespace Component
             get => (Color)GetValue(ItemBackgroundColorProperty);
             set => SetValue(ItemBackgroundColorProperty, value);
         }
-        public static BindableProperty ItemBackgroundColorProperty = BindableProperty.Create(nameof(ItemBackgroundColor), typeof(Color), typeof(BLSelector), default(Color), BindingMode.Default, propertyChanged: OnItemBackgroundColorPropertyChanged);
+        public static BindableProperty ItemBackgroundColorProperty = BindableProperty.Create(nameof(ItemBackgroundColor), typeof(Color), typeof(BLSelector), Color.Black, BindingMode.Default, propertyChanged: OnItemBackgroundColorPropertyChanged);
         private static void OnItemBackgroundColorPropertyChanged(BindableObject bindable, object oldValue, object newValue)
         {
             var current = bindable as BLSelector;
             if (current.Content?.Children == null) return;
 
-            // Set background of all boxview to ItemBackgroundColor
-            foreach (var box in current.Content.Children.OfType<BoxView>()) box.BackgroundColor = current.ItemBackgroundColor;
-
-            // Set background of the selected boxview to SelectedItemBackgroundColor
-            if (current.SelectedItemBackgroundColor == null) return;
-            ((BoxView)current.Content.Children[1 + current.Selected]).BackgroundColor = current.SelectedItemBackgroundColor;
+            current.frameBackGround2.BackgroundColor = current.ItemBackgroundColor;
+            current.frameBackGround2.BorderColor = current.ItemBackgroundColor;
         }
         #endregion
 
@@ -56,7 +71,7 @@ namespace Component
             get => (Color)GetValue(SelectedItemBackgroundColorProperty);
             set => SetValue(SelectedItemBackgroundColorProperty, value);
         }
-        public static BindableProperty SelectedItemBackgroundColorProperty = BindableProperty.Create(nameof(SelectedItemBackgroundColor), typeof(Color), typeof(BLSelector), default(Color), BindingMode.Default, propertyChanged: OnSelectedItemBackgroundColorPropertyChanged);
+        public static BindableProperty SelectedItemBackgroundColorProperty = BindableProperty.Create(nameof(SelectedItemBackgroundColor), typeof(Color), typeof(BLSelector), Color.Gray, BindingMode.Default, propertyChanged: OnSelectedItemBackgroundColorPropertyChanged);
         private static void OnSelectedItemBackgroundColorPropertyChanged(BindableObject bindable, object oldValue, object newValue)
         {
             var current = bindable as BLSelector;
@@ -74,12 +89,17 @@ namespace Component
             get => (Color)GetValue(TextColorProperty);
             set => SetValue(TextColorProperty, value);
         }
-        public static BindableProperty TextColorProperty = BindableProperty.Create(nameof(TextColor), typeof(Color), typeof(BLSelector), default(Color), BindingMode.Default, propertyChanged: OnTextColorPropertyChanged);
+        public static BindableProperty TextColorProperty = BindableProperty.Create(nameof(TextColor), typeof(Color), typeof(BLSelector), Color.White, BindingMode.Default, propertyChanged: OnTextColorPropertyChanged);
         private static void OnTextColorPropertyChanged(BindableObject bindable, object oldValue, object newValue)
         {
             var current = bindable as BLSelector;
-            if (current.Content?.Children == null) return;
 
+            // Check if text color is different from ItemBackgroundcolor
+            // To be sure that text is visible
+            if (current.TextColor == current.ItemBackgroundColor)
+                current.TextColor = (0.2126 * current.ItemBackgroundColor.R + 0.7152 * current.ItemBackgroundColor.G + 0.0722 * current.ItemBackgroundColor.B) > 0.5F ? Color.Black : Color.White;
+
+            if (current.Content?.Children == null) return;
             current.Content.Children.OfType<Label>().ForEach(c => c.TextColor = current.TextColor);
         }
         #endregion
@@ -123,7 +143,7 @@ namespace Component
             if (current.Content?.Children == null) return;
 
             // Set background of all boxview to ItemBackgroundColor
-            for (int i = 1; i < 1 + current.BoxViewControls.Count(); i++) ((BoxView)current.Content.Children[i]).BackgroundColor = current.ItemBackgroundColor;
+            for (int i = 1; i < 1 + current.BoxViewControls.Count(); i++) ((BoxView)current.Content.Children[i]).BackgroundColor = Color.Transparent;
 
             // Set background of the selected boxview to SelectedItemBackgroundColor
             ((BoxView)current.Content.Children[1 + current.Selected]).BackgroundColor = current.SelectedItemBackgroundColor;
@@ -132,7 +152,6 @@ namespace Component
             if (current.Commands != null) current.Commands[current.Selected]?.Execute(null);
         }
         #endregion
-
 
         #region Commmands Property
         public static BindableProperty CommandsProperty = BindableProperty.Create(nameof(Commands), typeof(ICommand[]), typeof(BLSelector), null, BindingMode.Default, propertyChanged: OnCommandsPropertyChanged);
@@ -156,8 +175,8 @@ namespace Component
 
         private BoxView[] BoxViewControls;
         private Grid      Content;
-        private BoxView   boxViewBackGround;
-        const   int       Duration = 300;
+        private Frame     frameBackGround1, frameBackGround2;
+
 
         public  void    OnItemTapped(object obj)
         {
@@ -169,60 +188,77 @@ namespace Component
             Content = new Grid { Padding = 0, Margin = 0, ColumnSpacing = 0, RowSpacing = 0 };
 
             // Set up rows and columns of the grid
-            Content.RowDefinitions.Add(new RowDefinition{ Height = new GridLength(1, GridUnitType.Auto) });
+            Content.RowDefinitions.Add(new RowDefinition { Height = HeightRequest == -1 ? new GridLength(1, GridUnitType.Auto)
+                                                                                        : new GridLength(HeightRequest, GridUnitType.Absolute)
+            });
             Labels.ForEach(s => {
                 // Add a column for each Label
                 Content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             });
 
-            // Add Background - ChildIndex = 0
-            boxViewBackGround = new BoxView
-            {
-                BackgroundColor = ItemBackgroundColor,
-                CornerRadius = 10
+            // Add Background - ChildIndex = 0 & 1
+            frameBackGround1 = new Frame {
+                BackgroundColor = SelectedItemBackgroundColor,
+                BorderColor = SelectedItemBackgroundColor,
+                Padding = Border,
+                CornerRadius = this.CornerRadius != -1 ? this.CornerRadius : 0,
             };
-            boxViewBackGround.BindingContext = this;
-            //DO NOT WORK - ATTEMPT 1
-            //boxViewBackGround.SetBinding(BoxView.CornerRadiusProperty, new Binding("Height", BindingMode.Default, new HalvedConverter()));
-            Content.Children.Add(boxViewBackGround, 0, Labels.Count(), 0, 1);
+            frameBackGround1.PropertyChanged += OnFramePropertyChanged;
+            Content.Children.Add(frameBackGround1, 0, Labels.Count(), 0, 1);
+
+            frameBackGround2 = new Frame {
+                BackgroundColor = ItemBackgroundColor,
+                BorderColor = ItemBackgroundColor,
+                CornerRadius = this.CornerRadius != -1 ? (this.CornerRadius > Border ? this.CornerRadius - Border : this.CornerRadius/2)  :  0
+            };
+            frameBackGround2.PropertyChanged += OnFramePropertyChanged;
+            frameBackGround1.Content = frameBackGround2;
+
 
             // Add Background for selected item  - ChildIndew = 1 ... 1+N
             for (int i = 0; i < BoxViewControls.Count(); i++)
             {
-                var boxView = new BoxView
+                BoxViewControls[i] = new BoxView
                 {
-                    BackgroundColor = ItemBackgroundColor,
-                    CornerRadius = 10
+                    BackgroundColor = Color.Transparent,
+                    CornerRadius = this.CornerRadius != -1 ? this.CornerRadius : 0
                 };
-                boxView.BindingContext = this;
-                //DO NOT WORK - ATTEMPT 1
-                //boxView.SetBinding(BoxView.CornerRadiusProperty, new Binding("Height", BindingMode.Default, new HalvedConverter()));
-
-                BoxViewControls[i] = boxView;   // Memorises the control associated to the label
+                if (WidthRequest != -1) BoxViewControls[i].WidthRequest = WidthRequest;
+                BoxViewControls[i].PropertyChanged += OnBoxPropertyChanged;
 
                 // Create the Tapped Command for this boxview
                 var tgr = new TapGestureRecognizer
                 {
                     NumberOfTapsRequired = 1,
                     Command = new Command(OnItemTapped),
-                    CommandParameter = boxView
+                    CommandParameter = BoxViewControls[i]
                 };
-                boxView.GestureRecognizers.Add(tgr);
-                Content.Children.Add(boxView, i, 0);
+                BoxViewControls[i].GestureRecognizers.Add(tgr);
+                Content.Children.Add(BoxViewControls[i], i, 0);
+            }
+
+
+            // Add Labels
+            for (int i = 0; i < BoxViewControls.Count(); i++)
+            {
+                // Creates the Label
+                Label label = new Label {
+                    Text = Labels[i],
+                    Padding = 0,
+                    Margin = this.Margin,
+                    HorizontalTextAlignment = TextAlignment.Center,
+                    VerticalTextAlignment = TextAlignment.Center,
+                    TextColor = TextColor,
+                    FontAttributes = FontAttributes.Bold,
+                    FontSize = (double)GetValue(FontSizeProperty),
+                    InputTransparent = true
+                };
+
+                Content.Children.Add(label, i, 0);
             }
 
             // Apply the SelectedItemBackgroundColor to the initially selected boxview
             ((BoxView)Content.Children[1 + Selected]).BackgroundColor = SelectedItemBackgroundColor;
-
-            Labels.ForEach(s => {
-
-                // Creates the Label
-                Label lbl = new Label { Text = s, Padding = 0, Margin = this.Margin, HorizontalTextAlignment = TextAlignment.Center, TextColor = TextColor,
-                                        FontAttributes = FontAttributes.Bold, FontSize = (double)GetValue(FontSizeProperty),
-                                        VerticalOptions = LayoutOptions.Center, InputTransparent = true };
-
-                Content.Children.Add(lbl, Labels.IndexOf(s), 0);
-            });
 
             // If the control was already set-up (we are on an update) then remove the actual content to replace/update it
             if (Children.Count() > 0) Children.RemoveAt(0);
@@ -231,16 +267,25 @@ namespace Component
             Children.Add(Content);
         }
 
-        //DO NOT WORK - ATTEMPT 2
-        protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private void OnBoxPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            base.OnPropertyChanged(propertyName);
-            if (propertyName == nameof(Height))
+            BoxView box = sender as BoxView;
+
+            if (e.PropertyName == nameof(Height))
             {
-                foreach (var box in Content.Children.OfType<BoxView>())
-                {
-                    box.CornerRadius = this.Height / 2;
-                }
+                if (this.CornerRadius == -1)
+                    box.CornerRadius = box.Height / 2;
+            }
+        }
+
+        private void OnFramePropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Frame frame = sender as Frame;
+
+            if (e.PropertyName == nameof(Height))
+            {
+                if (this.CornerRadius == -1)
+                    frame.CornerRadius = (float)frame.Height / 2;
             }
         }
 

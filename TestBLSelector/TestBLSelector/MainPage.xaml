@@ -22,9 +22,12 @@
         </Label>
 
         <component:BLSelector HorizontalOptions = "Start"
+                              HeightRequest="60"
+                              Border="4"
+                              CornerRadius="20"
+                              ItemBackgroundColor="LightSeaGreen"
                 FontSize="16"
                 TextColor="Black"
-                ItemBackgroundColor="LightGray"
                 SelectedItemBackgroundColor="Green"
                 Margin="5">
             <component:BLSelector.Labels>
