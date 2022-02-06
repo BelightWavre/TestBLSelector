@@ -21,22 +21,44 @@
             </Label.FormattedText>
         </Label>
 
-        <component:BLSelector HorizontalOptions = "Start"
-                              HeightRequest="60"
-                              Border="4"
-                              CornerRadius="20"
-                              ItemBackgroundColor="LightSeaGreen"
+        <StackLayout Orientation="Horizontal">
+            <Label Text="Test" Margin="5,5,15,5" VerticalTextAlignment="Center" VerticalOptions="Center"></Label>
+            <component:BLSelector HorizontalOptions = "Start"
+                HeightRequest="60"
+                Border="4"
+                CornerRadius="20"
                 FontSize="16"
                 TextColor="Black"
+                ItemBackgroundColor="LightSeaGreen"
                 SelectedItemBackgroundColor="Green"
-                Margin="5">
-            <component:BLSelector.Labels>
-                <x:Array Type="{x:Type x:String}">
-                    <x:String>Item1</x:String>
-                    <x:String>Item2</x:String>
-                </x:Array>
-            </component:BLSelector.Labels>
-        </component:BLSelector>
+                Margin="5" ItemMargin="10,0,10,0">
+                <component:BLSelector.Labels>
+                    <x:Array Type="{x:Type x:String}">
+                        <x:String>Item1</x:String>
+                        <x:String>Item2</x:String>
+                    </x:Array>
+                </component:BLSelector.Labels>
+            </component:BLSelector>
+        </StackLayout>
+
+        <StackLayout Orientation="Horizontal">
+            <Label Text="Test" Margin="5,5,15,5" VerticalTextAlignment="Center" VerticalOptions="Center"></Label>
+            <component:BLSelector HorizontalOptions = "Start"
+                HeightRequest="60"
+                Border="4"
+                FontSize="16"
+                TextColor="Black"
+                ItemBackgroundColor="LightSeaGreen"
+                SelectedItemBackgroundColor="Green"
+                Margin="5" ItemMargin="10,0,10,0">
+                <component:BLSelector.Labels>
+                    <x:Array Type="{x:Type x:String}">
+                        <x:String>Item1</x:String>
+                        <x:String>Item2</x:String>
+                    </x:Array>
+                </component:BLSelector.Labels>
+            </component:BLSelector>
+        </StackLayout>
 
 
     </StackLayout>
