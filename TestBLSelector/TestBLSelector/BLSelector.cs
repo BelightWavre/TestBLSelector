@@ -155,13 +155,27 @@ namespace Component
             if (current.Content?.Children == null) return;
 
             // Set background of all boxview to ItemBackgroundColor
-            for (int i = 1; i < 1 + current.BoxViewControls.Count(); i++) ((BoxView)current.Content.Children[i]).Opacity = 0;
+            for (int i = 0; i < current.BoxViewControls.Length; i++) current.BoxViewControls[i].Opacity = 0;
 
             // Set background of the selected boxview to SelectedItemBackgroundColor
-            ((BoxView)current.Content.Children[1 + current.Selected]).Opacity = 1;
+            current.BoxViewControls[current.Selected].Opacity = 1;
 
             // Execute corresponding Action
             if (current.Commands != null) current.Commands[current.Selected]?.Execute(null);
+
+            Debug.WriteLine($"Details for label's Background (BoxView):");
+            Debug.WriteLine($"    BoxViewControls[0].Opacity = {current.BoxViewControls[0].Opacity}");
+            Debug.WriteLine($"    BoxViewControls[0].Height = {current.BoxViewControls[0].Height}");
+            Debug.WriteLine($"    BoxViewControls[0].Width = {current.BoxViewControls[0].Width}");
+            Debug.WriteLine($"    BoxViewControls[0].CornerRadius = ({current.BoxViewControls[0].CornerRadius.TopRight}, {current.BoxViewControls[0].CornerRadius.TopLeft}, {current.BoxViewControls[0].CornerRadius.BottomRight}, {current.BoxViewControls[0].CornerRadius.BottomLeft})");
+            Debug.WriteLine($"Details for label's Background (BoxView):");
+            Debug.WriteLine($"    BoxViewControls[1].Opacity = {current.BoxViewControls[1].Opacity}");
+            Debug.WriteLine($"    BoxViewControls[1].Height = {current.BoxViewControls[1].Height}");
+            Debug.WriteLine($"    BoxViewControls[1].Width = {current.BoxViewControls[1].Width}");
+            Debug.WriteLine($"    BoxViewControls[1].CornerRadius = ({current.BoxViewControls[1].CornerRadius.TopRight}, {current.BoxViewControls[1].CornerRadius.TopLeft}, {current.BoxViewControls[1].CornerRadius.BottomRight}, {current.BoxViewControls[1].CornerRadius.BottomLeft})");
+            Debug.WriteLine($"");
+            Debug.WriteLine($"");
+
         }
         #endregion
 
@@ -192,9 +206,18 @@ namespace Component
 
         public void OnItemTapped(object obj)
         {
+            Debug.WriteLine($"Selected item = {BoxViewControls.IndexOf(obj)} of [0..{BoxViewControls.Length - 1}]");
+            Debug.WriteLine($"");
+            
             Selected = BoxViewControls.IndexOf(obj);
         }
 
+        // Set up the content of the control / grid :
+        // Content[0] = Background - Of  SelectedItemBackgroundColor  to draw the border of the control
+        // Content[1] = Background (a litle bit smaller) - Of  ItemBackgroundColor  to draw the foreground of the labels when not selected
+        // Content[2...2+N] = BoxViewControls[0...N-1] = Background of the items when selected (of color SelectedItemBackgroundColor)
+        //        => It's Opacity is changed from 1 when this item is selected to 0 when the item isn't selected
+        // Content[2+N +1 ... 2+N +N] = Labels for the text
         public void GridContendUpdate()
         {
             Content = new Grid { Padding = 0, Margin = 0, ColumnSpacing = 0, RowSpacing = 0 };
@@ -211,7 +234,7 @@ namespace Component
             });
 
             // Add Background - ChildIndex = 0 & 1
-            frameBackGround1 = new Frame
+            frameBackGround1 = new Frame   // Background - Of  SelectedItemBackgroundColor  to draw the border of the control
             {
                 BackgroundColor = SelectedItemBackgroundColor,
                 BorderColor = SelectedItemBackgroundColor,
@@ -221,7 +244,7 @@ namespace Component
             frameBackGround1.PropertyChanged += OnFramePropertyChanged;
             Content.Children.Add(frameBackGround1, 0, Labels.Count(), 0, 1);
 
-            frameBackGround2 = new Frame
+            frameBackGround2 = new Frame   
             {
                 BackgroundColor = ItemBackgroundColor,
                 BorderColor = ItemBackgroundColor,
@@ -231,7 +254,7 @@ namespace Component
             frameBackGround1.Content = frameBackGround2;
 
 
-            // Add Background for selected item  - ChildIndew = 1 ... 1+N
+            // Add Background for selected item  - ChildIndew = 2 ... 2+N
             for (int i = 0; i < BoxViewControls.Count(); i++)
             {
                 BoxViewControls[i] = new BoxView
@@ -276,7 +299,7 @@ namespace Component
             }
 
             // Apply the SelectedItemBackgroundColor to the initially selected boxview
-            ((BoxView)Content.Children[1 + Selected]).Opacity = 1;
+            BoxViewControls[Selected].Opacity = 1;
 
             // If the control was already set-up (we are on an update) then remove the actual content to replace/update it
             if (Children.Count() > 0) Children.RemoveAt(0);
@@ -294,8 +317,12 @@ namespace Component
 
             if (e.PropertyName == nameof(Height))
             {
-                if (this.CornerRadius == -1)
+                if (this.CornerRadius == -1) {
                     box.CornerRadius = box.Height / 2;
+                    Debug.WriteLine($"---> box.CornerRadius = ({box.CornerRadius.TopRight}, {box.CornerRadius.TopLeft}, {box.CornerRadius.BottomRight}, {box.CornerRadius.BottomLeft})");
+
+
+                }
             }
         }
 
@@ -308,8 +335,10 @@ namespace Component
 
             if (e.PropertyName == nameof(Height))
             {
-                if (this.CornerRadius == -1)
+                if (this.CornerRadius == -1) {
                     frame.CornerRadius = (float)frame.Height / 2;
+                    Debug.WriteLine($"---> frame.CornerRadius = ({frame.CornerRadius})");
+                }
             }
         }
     }
